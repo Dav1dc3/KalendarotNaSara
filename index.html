@@ -1,0 +1,529 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Календарот на Сара</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800&family=Onest:wght@400;600&family=Caveat:wght@600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: hero headline, then a stamped month calendar (left) next to a slot scanner and result card (right). Stacks on phones. */
+:root{
+  --paper:#eef1f7;
+  --ink:#101a33;
+  --muted:#56627f;
+  --line:#cdd5e6;
+  --card:#ffffff;
+  --cell:#f6f8fd;
+  --stamp:#d62839;
+  --free:#c6f432;
+  --on-free:#101a33;
+  --f-display:'Unbounded','Onest','Segoe UI',system-ui,sans-serif;
+  --f-body:'Onest','Segoe UI',system-ui,sans-serif;
+  --f-hand:'Caveat','Segoe Print','Comic Sans MS',cursive;
+  --f-mono:'JetBrains Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0d1424;
+    --ink:#e9edf9;
+    --muted:#9aa5c4;
+    --line:#27314e;
+    --card:#141d33;
+    --cell:#101830;
+    --stamp:#ff5468;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0d1424;
+  --ink:#e9edf9;
+  --muted:#9aa5c4;
+  --line:#27314e;
+  --card:#141d33;
+  --cell:#101830;
+  --stamp:#ff5468;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--f-body);
+  font-size:16px;
+  line-height:1.5;
+  padding-block:28px 56px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1040px;margin:0 auto}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--stamp);outline-offset:2px}
+
+/* hero */
+.kicker{font-family:var(--f-mono);font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+h1{
+  font-family:var(--f-display);font-weight:800;
+  font-size:clamp(2rem,7.2vw,4rem);line-height:1.04;
+  margin:14px 0 14px;text-wrap:balance;letter-spacing:-.01em;
+}
+h1 .busy{position:relative;display:inline-block;color:var(--stamp)}
+h1 .busy svg{position:absolute;left:0;bottom:-.14em;width:100%;height:.22em;overflow:visible}
+h1 .busy path{fill:none;stroke:var(--stamp);stroke-width:5;stroke-linecap:round;stroke-dasharray:280;stroke-dashoffset:280;animation:draw 1s .35s ease-out forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.lead{max-width:54ch;color:var(--muted);margin:0;font-size:1.05rem}
+
+/* layout */
+.main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;margin-top:30px;align-items:start}
+@media (max-width:840px){.main{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:16px}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.cal-title{font-family:var(--f-display);font-weight:600;font-size:1.05rem;margin:0}
+.nav{display:flex;gap:6px}
+.nav button{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:var(--cell);cursor:pointer;font-size:1.1rem;line-height:1}
+.nav button:hover:not(:disabled){border-color:var(--ink)}
+.nav button:disabled{opacity:.35;cursor:default}
+.dows,.grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dows{margin-bottom:4px}
+.dows span{font-family:var(--f-mono);font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:center;padding:2px 0}
+.grid.flip-next{animation:flipNext .3s ease-out}
+.grid.flip-prev{animation:flipPrev .3s ease-out}
+@keyframes flipNext{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+@keyframes flipPrev{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:none}}
+.day{
+  position:relative;min-height:58px;min-width:0;border-radius:8px;
+  background:var(--cell);border:1px solid var(--line);color:var(--ink);
+  padding:6px;text-align:left;cursor:pointer;overflow:hidden;
+  font-family:var(--f-mono);font-weight:600;font-size:.85rem;
+  transition:transform .12s ease,border-color .12s ease;
+}
+.day:hover{border-color:var(--ink)}
+.day.empty{visibility:hidden;pointer-events:none;border:0}
+.day.past{opacity:.42}
+.day.today{box-shadow:inset 0 0 0 2px var(--ink)}
+.day.scanning{box-shadow:0 0 0 3px var(--stamp);transform:scale(1.08);z-index:2}
+.stamp{
+  position:absolute;right:3px;bottom:5px;transform:rotate(-12deg);
+  border:2px solid var(--stamp);color:var(--stamp);border-radius:3px;padding:1px 3px;
+  font-family:var(--f-display);font-weight:800;font-size:.52rem;letter-spacing:.04em;line-height:1.2;
+}
+.stamp.pop{animation:stampIn .3s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes stampIn{from{transform:rotate(-12deg) scale(2.4);opacity:0}to{transform:rotate(-12deg) scale(1);opacity:1}}
+.day.free{background:var(--free);color:var(--on-free);border-color:var(--on-free)}
+.day.free .yes{
+  position:absolute;right:4px;bottom:5px;font-family:var(--f-display);font-weight:800;font-size:.7rem;
+}
+.day.free-pop{animation:wiggle .9s ease-out both,pulse 1.4s ease-out 2}
+@keyframes wiggle{0%{transform:scale(.6) rotate(-8deg)}40%{transform:scale(1.25) rotate(6deg)}70%{transform:scale(.95) rotate(-3deg)}100%{transform:scale(1.04) rotate(0)}}
+@keyframes pulse{0%{box-shadow:0 0 0 0 var(--free)}100%{box-shadow:0 0 0 16px transparent}}
+.detail{font-family:var(--f-hand);font-weight:600;font-size:1.4rem;line-height:1.2;color:var(--muted);margin:14px 2px 0;min-height:2.4em}
+
+/* scanner panel */
+.label{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.ticker{background:var(--cell);border:1.5px dashed var(--line);border-radius:10px;padding:12px;min-height:104px}
+.tk-date{font-family:var(--f-mono);font-size:.76rem;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.tk-reason{font-family:var(--f-hand);font-weight:600;font-size:1.55rem;line-height:1.12;margin-top:6px;overflow-wrap:anywhere}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px}
+.stat b{display:block;font-family:var(--f-mono);font-weight:600;font-size:1.4rem;font-variant-numeric:tabular-nums;line-height:1.1}
+.stat span{font-size:.7rem;color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{
+  font-family:var(--f-display);font-weight:800;font-size:.78rem;letter-spacing:.01em;
+  border-radius:10px;padding:13px 16px;cursor:pointer;border:1.5px solid var(--ink);
+  transition:transform .12s ease;
+}
+.btn:hover{transform:translateY(-1px)}
+.btn.primary{background:var(--ink);color:var(--paper)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn[hidden]{display:none}
+
+/* result */
+.res{margin-top:14px;background:var(--free);color:var(--on-free);border-radius:12px;padding:16px;animation:rise .5s ease-out}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.res .label{color:var(--on-free);opacity:.75}
+.res-date{font-family:var(--f-display);font-weight:800;font-size:clamp(1.35rem,4vw,1.8rem);line-height:1.1;margin:0;text-wrap:balance}
+.res-year{font-family:var(--f-mono);font-size:.85rem;margin:4px 0 0}
+.res-note{margin:10px 0 0;font-size:.95rem}
+.res-hand{font-family:var(--f-hand);font-weight:600;font-size:1.3rem;margin:4px 0 0;opacity:.85}
+.msg{margin:12px 0;border:1.5px dashed var(--on-free);border-radius:8px;padding:8px 10px;font-size:.9rem;user-select:text;overflow-wrap:anywhere}
+.res .btn.primary{background:var(--on-free);color:var(--free);border-color:var(--on-free)}
+.res .btn.ghost{color:var(--on-free);border-color:var(--on-free)}
+
+/* footer */
+.foot{margin-top:26px;font-family:var(--f-hand);font-weight:600;font-size:1.2rem;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* confetti */
+.confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:20}
+.confetti i{position:absolute;top:-16px;width:8px;height:14px;border-radius:2px;animation:fall 2.4s ease-in forwards}
+@keyframes fall{to{transform:translate(var(--dx),105vh) rotate(var(--rot));opacity:.9}}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  h1 .busy path{stroke-dashoffset:0}
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <p class="kicker" id="kicker">Официјален распоред на Сара</p>
+    <h1>Сара е <span class="busy">зафатена<svg viewBox="0 0 220 12" preserveAspectRatio="none" aria-hidden="true"><path d="M2 8 C 40 2, 80 12, 120 5 S 190 9, 218 4"/></svg></span>.</h1>
+    <p class="lead">Учи. Календарот тоа го потврдува за секој ден. Притисни го копчето и види кога конечно има време за излегување.</p>
+  </header>
+
+  <main class="main">
+    <section class="card" aria-label="Календар">
+      <div class="cal-head">
+        <h2 class="cal-title" id="calTitle">Ноември 2026</h2>
+        <div class="nav">
+          <button type="button" id="prev" aria-label="Претходен месец">&#8592;</button>
+          <button type="button" id="next" aria-label="Следен месец">&#8594;</button>
+        </div>
+      </div>
+      <div class="dows" aria-hidden="true"><span>Пон</span><span>Вто</span><span>Сре</span><span>Чет</span><span>Пет</span><span>Саб</span><span>Нед</span></div>
+      <div class="grid" id="grid"></div>
+      <p class="detail" id="detail">Допри кој било ден за да видиш што прави Сара.</p>
+    </section>
+
+    <section class="card" aria-label="Скенер за слободен термин">
+      <p class="label">Скенер за слободно време</p>
+      <div class="ticker">
+        <div class="tk-date" id="tkDate">Статус: подготвен</div>
+        <div class="tk-reason" id="tkReason">Притисни го копчето. Сара веројатно учи.</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><b id="stChecked">0</b><span>Проверени дена</span></div>
+        <div class="stat"><b id="stExcuses">0</b><span>Изговори</span></div>
+        <div class="stat"><b id="stFree">0</b><span>Слободни</span></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn primary" id="go">Најди слободен термин</button>
+        <button type="button" class="btn ghost" id="stop" hidden>Стоп</button>
+      </div>
+
+      <div class="res" id="result" hidden>
+        <p class="label">Најблизок слободен термин</p>
+        <p class="res-date" id="resDate"></p>
+        <p class="res-year" id="resYear"></p>
+        <p class="res-note" id="resNote"></p>
+        <p class="res-hand">(ако не излезе нов колоквиум до тогаш)</p>
+        <div class="msg" id="msg"></div>
+        <button type="button" class="btn primary" id="copy">Копирај порака за Сара</button>
+      </div>
+    </section>
+  </main>
+
+  <p class="foot">Календарот не лаже. Сара можеби.</p>
+</div>
+
+<div class="sr" id="srStatus" role="status" aria-live="polite"></div>
+<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var MONTHS=['јануари','февруари','март','април','мај','јуни','јули','август','септември','октомври','ноември','декември'];
+  var DAYS=['недела','понеделник','вторник','среда','четврток','петок','сабота'];
+  var SHORT=['нед','пон','вто','сре','чет','пет','саб'];
+
+  var REASONS=[
+    'Учи.',
+    'Учи за испит што е дури во јуни.',
+    'Прави белешки за своите белешки.',
+    'Се подготвува да почне да учи.',
+    'Одмара од учење за да има сила да учи.',
+    'Ја гледа книгата. Уште не ја отвора.',
+    'Има колоквиум. Не прашувај кога.',
+    'Прво ги подредува тетратките по боја, па ќе учи.',
+    'Седна да учи, ама прво кафе. Три часа кафе.',
+    'Има важна средба со скриптата.',
+    'Паузата од учење е закажана за подоцна.',
+    'Учи од вчера. И од пред две недели.',
+    'Мора да ги повтори и оние работи што ги знае.',
+    'Прави распоред за учење. Распоредот трае цел ден.'
+  ];
+  var WEEKEND=[
+    'Викенд. Единственото време кога навистина може да учи.',
+    'Викендот е резервиран за учење. Тоа е правило.',
+    'Одмор викендов. Со учење, се разбира.'
+  ];
+  var SUNDAY='Недела: подготвување за учење во понеделник.';
+
+  var $=function(id){return document.getElementById(id)};
+  var grid=$('grid'),calTitle=$('calTitle'),prevBtn=$('prev'),nextBtn=$('next'),detail=$('detail');
+  var tkDate=$('tkDate'),tkReason=$('tkReason'),stChecked=$('stChecked'),stExcuses=$('stExcuses'),stFree=$('stFree');
+  var goBtn=$('go'),stopBtn=$('stop'),result=$('result'),resDate=$('resDate'),resYear=$('resYear'),resNote=$('resNote');
+  var msgBox=$('msg'),copyBtn=$('copy'),srStatus=$('srStatus'),confetti=$('confetti');
+
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var sleep=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
+  var pad=function(n){return String(n).padStart(2,'0')};
+  var cap=function(s){return s.charAt(0).toUpperCase()+s.slice(1)};
+  var mk=function(y,m,d){return new Date(y,m,d,12)};
+  var key=function(d){return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate()};
+  var idx=function(d){return d.getFullYear()*12+d.getMonth()};
+  var iso=function(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+  var parseISO=function(s){var p=String(s).split('-').map(Number);return p.length===3&&p.every(function(n){return !isNaN(n)})?mk(p[0],p[1]-1,p[2]):null};
+  var plural=function(n){return n===1?'ден':'дена'};
+
+  var now=new Date();
+  var today=mk(now.getFullYear(),now.getMonth(),now.getDate());
+  var todayKey=key(today);
+
+  function reasonFor(d){
+    var n=Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000);
+    var dow=d.getDay();
+    if(dow===0&&n%2===0) return SUNDAY;
+    var pool=(dow===0||dow===6)?WEEKEND.concat(REASONS):REASONS;
+    return pool[(n*7+3)%pool.length];
+  }
+  var longDate=function(d){return DAYS[d.getDay()]+', '+d.getDate()+' '+MONTHS[d.getMonth()]};
+  var shortDate=function(d){return SHORT[d.getDay()]+' '+d.getDate()+' '+MONTHS[d.getMonth()]};
+
+  /* free date: default is a deliberately distant Saturday */
+  var freeDate=mk(2026,11,1);
+  if(freeDate<=today) freeDate=mk(today.getFullYear(),today.getMonth(),today.getDate()+7);
+  var freeKey=key(freeDate);
+
+  var busy=new Set(),checked=0,freeRevealed=false,running=false,runId=0;
+  var view={y:today.getFullYear(),m:today.getMonth()};
+
+  function updateStats(){
+    stChecked.textContent=checked;
+    stExcuses.textContent=checked;
+    stFree.textContent=freeRevealed?1:0;
+  }
+  function cellFor(k){return grid.querySelector('[data-key="'+k+'"]')}
+  function addStamp(cell,fresh){
+    if(cell.querySelector('.stamp')) return;
+    var s=document.createElement('span');
+    s.className='stamp'+(fresh?' pop':'');
+    s.textContent='УЧИ';
+    cell.appendChild(s);
+  }
+  function markFree(cell){
+    var st=cell.querySelector('.stamp');
+    if(st) st.remove();
+    cell.classList.add('free');
+    if(!cell.querySelector('.yes')){
+      var y=document.createElement('span');
+      y.className='yes';
+      y.textContent='ДА!';
+      cell.appendChild(y);
+    }
+  }
+
+  function updateNav(){
+    var minI=idx(today),maxI=Math.max(idx(freeDate),minI),cur=view.y*12+view.m;
+    prevBtn.disabled=cur<=minI;
+    nextBtn.disabled=cur>=maxI;
+  }
+
+  function render(anim){
+    var y=view.y,m=view.m;
+    calTitle.textContent=cap(MONTHS[m])+' '+y;
+    grid.innerHTML='';
+    var first=(new Date(y,m,1).getDay()+6)%7;
+    var dim=new Date(y,m+1,0).getDate();
+    for(var i=0;i<first;i++){
+      var e=document.createElement('span');
+      e.className='day empty';
+      grid.appendChild(e);
+    }
+    for(var d=1;d<=dim;d++){
+      var dt=mk(y,m,d),k=key(dt);
+      var b=document.createElement('button');
+      b.type='button';
+      b.className='day';
+      b.dataset.key=k;
+      b.dataset.ts=String(dt.getTime());
+      b.setAttribute('aria-label',DAYS[dt.getDay()]+' '+d+' '+MONTHS[m]);
+      b.textContent=d;
+      if(dt<today) b.classList.add('past');
+      if(k===todayKey) b.classList.add('today');
+      if(busy.has(k)) addStamp(b,false);
+      if(freeRevealed&&k===freeKey) markFree(b);
+      grid.appendChild(b);
+    }
+    grid.classList.remove('flip-next','flip-prev');
+    if(anim&&!reduce){void grid.offsetWidth;grid.classList.add(anim)}
+    updateNav();
+  }
+
+  function changeMonth(delta){
+    var cur=view.y*12+view.m+delta;
+    var minI=idx(today),maxI=Math.max(idx(freeDate),minI);
+    if(cur<minI||cur>maxI) return;
+    view={y:Math.floor(cur/12),m:cur%12};
+    render(delta>0?'flip-next':'flip-prev');
+  }
+  prevBtn.addEventListener('click',function(){changeMonth(-1)});
+  nextBtn.addEventListener('click',function(){changeMonth(1)});
+
+  grid.addEventListener('click',function(ev){
+    var c=ev.target.closest('.day');
+    if(!c||c.classList.contains('empty')) return;
+    var d=new Date(Number(c.dataset.ts));
+    if(c.classList.contains('free')){
+      detail.textContent='Слободна. Официјално. Тоа е во календарот.';
+    }else if(d<today){
+      detail.textContent='Помина. Сара и тогаш учеше.';
+    }else{
+      detail.textContent=cap(longDate(d))+': зафатена. '+reasonFor(d);
+    }
+  });
+
+  function setUI(state){
+    if(state==='running'){
+      goBtn.hidden=true;stopBtn.hidden=false;
+    }else{
+      goBtn.hidden=false;stopBtn.hidden=true;
+      goBtn.textContent=state==='idle'?'Најди слободен термин':'Пробај пак';
+    }
+  }
+
+  function resetState(){
+    runId++;
+    running=false;
+    busy=new Set([todayKey]);
+    checked=0;
+    freeRevealed=false;
+    view={y:today.getFullYear(),m:today.getMonth()};
+    result.hidden=true;
+    tkDate.textContent='Статус: подготвен';
+    tkReason.textContent='Притисни го копчето. Сара веројатно учи.';
+    updateStats();
+    setUI('idle');
+    render();
+  }
+
+  function launchConfetti(){
+    if(reduce) return;
+    var cols=['var(--free)','var(--stamp)','var(--ink)'];
+    confetti.innerHTML='';
+    for(var i=0;i<42;i++){
+      var p=document.createElement('i');
+      p.style.left=(Math.random()*100)+'%';
+      p.style.background=cols[i%cols.length];
+      p.style.setProperty('--dx',((Math.random()-.5)*160)+'px');
+      p.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+      p.style.animationDelay=(Math.random()*.6)+'s';
+      p.style.animationDuration=(1.8+Math.random()*1.2)+'s';
+      confetti.appendChild(p);
+    }
+    setTimeout(function(){confetti.innerHTML=''},3800);
+  }
+
+  function reveal(){
+    freeRevealed=true;
+    running=false;
+    var cell=cellFor(freeKey);
+    if(cell){markFree(cell);if(!reduce)cell.classList.add('free-pop')}
+    var diff=Math.round((freeDate-today)/86400000);
+    resDate.textContent=DAYS[freeDate.getDay()]+', '+freeDate.getDate()+' '+MONTHS[freeDate.getMonth()];
+    resYear.textContent=freeDate.getFullYear()+' · уште '+diff+' '+plural(diff);
+    var note;
+    if(diff<=7) note='Ова е веќе чудо. Оди пред да се премисли.';
+    else if(diff<=30) note='Релативно блиску. Сара очигледно е во добро расположение.';
+    else note='Ќе ти треба трпение. Календарот е прецизен, Сара помалку.';
+    resNote.textContent=note;
+    msgBox.textContent='Сара, '+DAYS[freeDate.getDay()]+', '+freeDate.getDate()+' '+MONTHS[freeDate.getMonth()]+'. Календарот вели дека си слободна. Без изговори.';
+    copyBtn.textContent='Копирај порака за Сара';
+    result.hidden=false;
+    tkDate.textContent='Статус: најдено';
+    tkReason.textContent='Конечно. Една слободна дата.';
+    updateStats();
+    setUI('done');
+    srStatus.textContent='Најден е слободен термин: '+resDate.textContent+' '+freeDate.getFullYear()+'.';
+    launchConfetti();
+  }
+
+  async function scan(){
+    if(running) return;
+    resetState();
+    running=true;
+    var my=runId;
+    setUI('running');
+    srStatus.textContent='Скенирањето започна.';
+    var days=[];
+    for(var d=new Date(today);d<freeDate;d=mk(d.getFullYear(),d.getMonth(),d.getDate()+1)) days.push(d);
+
+    if(reduce){
+      days.forEach(function(x){busy.add(key(x))});
+      checked=days.length;
+    }else{
+      var per=Math.min(160,Math.max(30,6500/Math.max(1,days.length)));
+      for(var i=0;i<days.length;i++){
+        if(my!==runId) return;
+        var x=days[i];
+        if(idx(x)!==view.y*12+view.m){
+          view={y:x.getFullYear(),m:x.getMonth()};
+          render('flip-next');
+          await sleep(320);
+          if(my!==runId) return;
+        }
+        var k=key(x),cell=cellFor(k);
+        if(cell) cell.classList.add('scanning');
+        tkDate.textContent='Проверувам: '+shortDate(x);
+        await sleep(per*0.45);
+        if(my!==runId) return;
+        busy.add(k);
+        if(cell){addStamp(cell,true);cell.classList.remove('scanning')}
+        tkReason.textContent=reasonFor(x);
+        checked=i+1;
+        updateStats();
+        await sleep(per*0.55);
+      }
+      if(my!==runId) return;
+    }
+    if(idx(freeDate)!==view.y*12+view.m){
+      view={y:freeDate.getFullYear(),m:freeDate.getMonth()};
+      render('flip-next');
+      if(!reduce){await sleep(320);if(my!==runId) return}
+    }else{
+      render();
+    }
+    reveal();
+  }
+
+  goBtn.addEventListener('click',scan);
+  stopBtn.addEventListener('click',function(){
+    runId++;
+    running=false;
+    tkDate.textContent='Статус: прекинато';
+    tkReason.textContent='Прекина? Токму така завршуваат и плановите со Сара.';
+    document.querySelectorAll('.day.scanning').forEach(function(c){c.classList.remove('scanning')});
+    srStatus.textContent='Скенирањето е прекинато.';
+    setUI('stopped');
+  });
+
+  copyBtn.addEventListener('click',function(){
+    var text=msgBox.textContent;
+    function selectIt(){
+      try{
+        var r=document.createRange();
+        r.selectNodeContents(msgBox);
+        var s=window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+      }catch(e){}
+      copyBtn.textContent='Означено. Копирај рачно.';
+    }
+    try{
+      navigator.clipboard.writeText(text).then(function(){
+        copyBtn.textContent='Копирано. Прати ѝ.';
+      },selectIt);
+    }catch(e){selectIt()}
+  });
+
+  /* start */
+  $('kicker').textContent='Денес е '+DAYS[today.getDay()]+', '+today.getDate()+' '+MONTHS[today.getMonth()]+' '+today.getFullYear()+'. Сара учи.';
+  resetState();
+  detail.textContent='Денес: зафатена. '+reasonFor(today);
+})();
+</script>
+
+</body></html>
